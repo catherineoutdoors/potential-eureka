@@ -1,0 +1,86 @@
+#This script aims to use Blender to convert multiple videos to image sequences
+#Command Prompt (Windows): blender --background --python "Path/to/script/script.py"
+
+import bpy
+import os
+import time
+
+#Set parameters
+dir = 'Path/to/folder/containing/videos/'
+framestart = 0
+ani_frame_start = 0
+ani_frame_end = 250
+ani_frame_step = 1
+ani_resolution_prc = 100
+ani_frame_rate = 29.97
+ani_output_overwrite = False
+
+#Display all files, but first, sort them
+allfiles = os.listdir(dir)
+allfiles.sort()
+time.sleep(3)
+print (allfiles)
+time.sleep(3)
+
+
+
+#Open folder, Loop movies, define mov_fullfilename
+for file in allfiles:
+	
+	mov_filename = file
+	mov_fullfilename = dir + file
+
+	#contexting 
+	override = {'region': bpy.context.window_manager.windows[0].screen.areas[2].regions[0], 'blend_data': bpy.context.blend_data, 'scene': bpy.data.scenes['Scene'], 'window': bpy.context.window_manager.windows[0], 'screen': bpy.data.screens['Video Editing'], 'area': bpy.data.screens['Video Editing'].areas[2]}
+
+	##add movie strip
+	bpy.ops.sequencer.movie_strip_add(override, frame_start=framestart, filepath=mov_fullfilename)
+	time.sleep(5)
+	
+	#set the parameters 
+	print ('Now converting ' + file)
+	bpy.data.scenes["Scene"].frame_start = ani_frame_start
+	bpy.data.scenes["Scene"].frame_end = ani_frame_end
+	bpy.data.scenes["Scene"].frame_step = ani_frame_step
+	bpy.data.scenes["Scene"].render.resolution_percentage = ani_resolution_prc
+	bpy.context.scene.render.fps = ani_frame_rate
+	bpy.data.scenes["Scene"].render.use_overwrite = ani_output_overwrite
+	
+	#set the output folder
+	new_folder_path = dir + '/Converted Images - ' + os.path.splitext(file)[0] + '/'
+	bpy.data.scenes["Scene"].render.filepath = new_folder_path
+	
+	#wait for 5 seconds
+	time.sleep(5)
+	
+	#animate
+	result = bpy.ops.render.render(animation=True)
+	
+	#wait for another 5 seconds
+	time.sleep(5)
+	
+	#wait till it is done, then delete movie strip
+	if result == {'FINISHED'}:
+		print ("Successfully converted " + mov_filename)
+	else:
+		print ("Failed to convert " + mov_filename)
+
+	bpy.ops.sequencer.select_all()	
+	#wait for 5 seconds
+	time.sleep(3)
+	bpy.ops.sequencer.delete()	
+	#wait for 5 seconds
+	time.sleep(3)
+	
+	#added to double make sure all strips are selected and removed
+	bpy.ops.sequencer.select_all()	
+	
+	#wait for 5 seconds
+	time.sleep(3)
+	bpy.ops.sequencer.delete()	
+	
+	#wait for 5 seconds
+	time.sleep(3)
+
+#End of loop
+
